@@ -66,12 +66,13 @@ def init_belief(belief_matrix):
             belief_matrix[i][j] = 1 / (belief_matrix.shape[0] * belief_matrix.shape[1])
 
 def update_belief_matrix(belief_matrix, map, i, j):
+    old_belief = belief_matrix[i][j]
     for x in range(belief_matrix.shape[0]):
         for y in range(belief_matrix.shape[1]):
             if x == i and y == j:
-                belief_matrix[x][y] = (map[x][y].fnr * belief_matrix[x][y]) / ((1 * (1 - belief_matrix[i][j])) + (map[i][j].fnr * belief_matrix[i][j]))
+                belief_matrix[x][y] = (map[x][y].fnr * belief_matrix[x][y]) / ((1 * (1 - old_belief)) + (map[x][y].fnr * old_belief))
             else:
-                belief_matrix[x][y] = (1 * belief_matrix[x][y]) / ((1 * (1 - belief_matrix[i][j])) + (map[i][j].fnr * belief_matrix[i][j]))
+                belief_matrix[x][y] = (1 * belief_matrix[x][y]) / ((1 * (1 - old_belief)) + (map[i][j].fnr * old_belief))
 
 def find_next_move(prob_matrix, i, j):
     best_prob = 0
