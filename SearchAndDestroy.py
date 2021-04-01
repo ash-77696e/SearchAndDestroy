@@ -17,8 +17,15 @@ class Cell:
         
         self.is_target = False
     
+    def search(self):
+        if self.is_target == True:
+            if random.random() <= self.fnr:
+                return 'Failure'
+            return 'Success'
+        return 'Failure'
+    
     def __str__(self):
-        return 'true' if self.is_target == True else 'false'
+        return self.terrain
 
 def generate_map(dim):
     map = []
@@ -49,19 +56,91 @@ def place_target(map):
     j = random.randint(0, len(map) - 1)
     map[i][j].is_target = True
 
+    output = map[i][j].search()
+    print(output)
+    print(map[i][j])
+
 def init_belief(belief_matrix):
     for i in range(belief_matrix.shape[0]):
         for j in range(belief_matrix.shape[1]):
             belief_matrix[i][j] = 1 / (belief_matrix.shape[0] * belief_matrix.shape[1])
+
+def update_belief_matrix(belief_matrix, map, i, j):
+    for x in range(belief_matrix.shape[0]):
+        for y in range(belief_matrix.shape[1]):
+            if x == i and y == j:
+                belief_matrix[x][y] = (map[x][y].fnr * belief_matrix[x][y]) / ((1 * (1 - belief_matrix[i][j])) + (map[i][j].fnr * belief_matrix[i][j]))
+            else:
+                belief_matrix[x][y] = (1 * belief_matrix[x][y]) / ((1 * (1 - belief_matrix[i][j])) + (map[i][j].fnr * belief_matrix[i][j]))
+
+def find_next_move(prob_matrix, i, j):
+    best_prob = 0
+    best_distance = 60
+    best_i = -1
+    best_j = -1
+
+    for x in range(prob_matrix.shape[0]):
+        for y in range(prob_matrix.shape[1]):
+            if prob_matrix[x][y] > best_prob:
+                best_i = x
+                best_j = y
+                best_prob = prob_matrix[x][y]
+                best_distance = abs(i - x) + abs(j - y)
+            elif prob_matrix[x][y] == best_prob:
+                distance = abs(i - x) + abs(j - y)
+                if distance < best_distance:
+                    best_i = x
+                    best_j = y
+                    best_distance = distance
+                elif distance == best_distance:
+                    rand = random.randint(1, 2)
+                    if rand == 2:
+                        best_i = x
+                        best_j = y
+                        best_distance = distance
+    
+    return best_i, best_j, best_distance
 
 def agent1(map):
     belief_matrix = np.zeros((len(map), len(map)))
     init_belief(belief_matrix)
     print(belief_matrix)
 
+    searches = 0
+    distance_traveled = 0
+
+    found = False
+
+    i = random.randint(0, len(map) - 1)
+    j = random.randint(0, len(map) - 1)
+
+    searches += 1
+
+    if map[i][j].search() == 'Success':
+        print('Success!')
+        return searches + distance_traveled
+    
+    update_belief_matrix(belief_matrix, map, i, j)
+    i, j, distance = find_next_move(belief_matrix, i, j)
+    distance_traveled += distance
+
+    while not(found):
+        searches += 1
+        if map[i][j].search() == 'Success':
+            print('Success!')
+            print(map[i][j].terrain)
+            return searches + distance_traveled
+        
+        update_belief_matrix(belief_matrix, map, i, j)
+        i, j, distance = find_next_move(belief_matrix, i, j)
+        distance_traveled += distance
+        print(np.sum(belief_matrix))
+    
 def main():
     map = generate_map(50)
-    agent1(map)
+    place_target(map)
+    score = agent1(map)
+    print(score)
     
 
 if __name__ == '__main__':
