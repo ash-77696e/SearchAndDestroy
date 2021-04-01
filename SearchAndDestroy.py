@@ -74,6 +74,13 @@ def update_belief_matrix(belief_matrix, map, i, j):
             else:
                 belief_matrix[x][y] = (1 * belief_matrix[x][y]) / ((1 * (1 - old_belief)) + (map[i][j].fnr * old_belief))
 
+def update_found_matrix(found_matrix, belief_matrix, map):
+    for x in range(found_matrix.shape[0]):
+        for y in range(found_matrix.shape[1]):
+            found_matrix[x][y] = (1 - map[x][y].fnr) * belief_matrix[x][y]    
+
+    return found_matrix
+
 def find_next_move(prob_matrix, i, j):
     best_prob = 0
     best_distance = 60
@@ -136,11 +143,61 @@ def agent1(map):
         i, j, distance = find_next_move(belief_matrix, i, j)
         distance_traveled += distance
         print(np.sum(belief_matrix))
+
+def agent2(map):
+    belief_matrix = np.zeros((len(map), len(map)))
+    init_belief(belief_matrix)
+    print(belief_matrix)
+
+    found_matrix = np.zeros((len(map), len(map)))
+    update_found_matrix(found_matrix, belief_matrix, map)
+    print(found_matrix)
+
+    searches = 0 
+    distance_traveled = 0
+
+    found = False
+    # randomly pick first cell to search
+    i = random.randint(0, len(map) - 1)
+    j = random.randint(0, len(map) - 1)
+
+    searches += 1
     
+    if (map[i][j].search() == 'Success'):
+        print('Success!')
+        return searches + distance_traveled
+
+    update_belief_matrix(belief_matrix, map, i, j)
+    
+    i, j, distance = find_next_move(found_matrix, i, j)
+    distance_traveled += distance
+
+    while not(found):
+        searches += 1
+        if map[i][j].search() == 'Success':
+            print('Success')
+            print(map[i][j].terrain)
+            return searches + distance_traveled
+        
+        # failed to find target
+        update_found_matrix(found_matrix, belief_matrix, map)
+        update_belief_matrix(belief_matrix, map, i, j)
+        
+        i, j, distance = find_next_move(found_matrix, i, j)
+        distance_traveled += distance
+        print(np.sum(belief_matrix))
+        print(np.sum(found_matrix))
+
+
+
+
+
+
 def main():
     map = generate_map(50)
     place_target(map)
-    score = agent1(map)
+    #score = agent1(map)
+    score = agent2(map)
     print(score)
     
 
