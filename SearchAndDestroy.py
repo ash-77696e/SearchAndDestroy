@@ -267,6 +267,7 @@ def find_next_moves_improved(prob_matrix, i, j, avoid):
 
 
 def improved_next_move(map, belief_matrix, found_matrix, i, j):
+   
     potential_moves = [] # list of 5 highest probability cells to consider utilities for
     avoid = []
     utilities = []
@@ -280,7 +281,7 @@ def improved_next_move(map, belief_matrix, found_matrix, i, j):
         found_copy = np.copy(found_matrix)
         update_found_matrix(found_copy, belief_matrix, map)
         x1, y1, utilDistance = find_next_move(found_copy, x, y)
-        utility = move[1] + (map[x][y].fnr * (utilDistance + 1)) + ((1 - map[x][y].fnr) * (1))
+        utility = move[1] + ((1 - found_copy[x][y]) * (utilDistance + 1)) + (found_copy[x][y] * (1))
         utilities.append((utility, (x,y)))
     
     minUtil = utilities[0]
@@ -292,13 +293,7 @@ def improved_next_move(map, belief_matrix, found_matrix, i, j):
     manhattan_distance = abs(i - x) + abs(j - y)
 
     return x, y, manhattan_distance
-
-
-
-    
-            
-
-
+ 
 
 def main():
     map = generate_map(50)
