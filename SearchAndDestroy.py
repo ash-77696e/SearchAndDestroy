@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import heapq
+import concurrent.futures
 
 class Cell:
 
@@ -59,7 +60,7 @@ def place_target(map):
 
     output = map[i][j].search()
     #print(output)
-    print(map[i][j])
+    #print(map[i][j])
 
 def init_belief(belief_matrix):
     for i in range(belief_matrix.shape[0]):
@@ -108,12 +109,13 @@ def find_next_move(prob_matrix, i, j):
                         best_j = y
                         best_distance = distance
     
+    #print((best_i, best_j))
     return best_i, best_j, best_distance
 
 def agent1(map):
     belief_matrix = np.zeros((len(map), len(map)))
     init_belief(belief_matrix)
-    print(belief_matrix)
+    #print(belief_matrix)
 
     searches = 0
     distance_traveled = 0
@@ -127,7 +129,7 @@ def agent1(map):
 
     if map[i][j].search() == 'Success':
         print('Success!')
-        return searches + distance_traveled
+        return (searches + distance_traveled, map[i][j].terrain)
     
     update_belief_matrix(belief_matrix, map, i, j)
     i, j, distance = find_next_move(belief_matrix, i, j)
@@ -138,21 +140,21 @@ def agent1(map):
         if map[i][j].search() == 'Success':
             print('Success!')
             print(map[i][j].terrain)
-            return searches + distance_traveled
+            return (searches + distance_traveled, map[i][j].terrain)
         
         update_belief_matrix(belief_matrix, map, i, j)
         i, j, distance = find_next_move(belief_matrix, i, j)
         distance_traveled += distance
-        print(np.sum(belief_matrix))
+        #print(np.sum(belief_matrix))
 
 def agent2(map):
     belief_matrix = np.zeros((len(map), len(map)))
     init_belief(belief_matrix)
-    print(belief_matrix)
+    #print(belief_matrix)
 
     found_matrix = np.zeros((len(map), len(map)))
     update_found_matrix(found_matrix, belief_matrix, map)
-    print(found_matrix)
+    #print(found_matrix)
 
     searches = 0 
     distance_traveled = 0
@@ -166,7 +168,7 @@ def agent2(map):
     
     if (map[i][j].search() == 'Success'):
         print('Success!')
-        return searches + distance_traveled
+        return (searches + distance_traveled, map[i][j].terrain)
 
     update_belief_matrix(belief_matrix, map, i, j)
     
@@ -178,7 +180,7 @@ def agent2(map):
         if map[i][j].search() == 'Success':
             print('Success')
             print(map[i][j].terrain)
-            return searches + distance_traveled
+            return (searches + distance_traveled, map[i][j].terrain)
         
         # failed to find target
         update_found_matrix(found_matrix, belief_matrix, map)
@@ -186,8 +188,8 @@ def agent2(map):
         
         i, j, distance = find_next_move(found_matrix, i, j)
         distance_traveled += distance
-        print(np.sum(belief_matrix))
-        print(np.sum(found_matrix))
+        #print(np.sum(belief_matrix))
+        #print(np.sum(found_matrix))
 
 def agent3(map):
     '''
@@ -257,7 +259,7 @@ def agent3(map):
     
     if (map[i][j].search() == 'Success'):
         print('Success!')
-        return searches + distance_traveled
+        return (searches + distance_traveled, map[i][j].terrain)
 
     update_belief_matrix(belief_matrix, map, i, j)
     ratio_matrix = update_ratio_matrix(found_matrix, map, i, j)
@@ -267,13 +269,13 @@ def agent3(map):
 
     while not(found):
         
-        # perform amount of searches based on type of terrain
+        #perform amount of searches based on type of terrain
         if (map[i][j].terrain == 'flat'):
             searches += 1
             if map[i][j].search() == 'Success':
                 print('Success')
                 print(map[i][j].terrain)
-                return searches + distance_traveled
+                return (searches + distance_traveled, map[i][j].terrain)
             else:
                 update_found_matrix(found_matrix, belief_matrix, map)
                 update_belief_matrix(belief_matrix, map, i, j)
@@ -283,7 +285,7 @@ def agent3(map):
                 if map[i][j].search() == 'Success':
                     print('Success')
                     print(map[i][j].terrain)
-                    return searches + distance_traveled
+                    return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
                     update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
@@ -293,7 +295,7 @@ def agent3(map):
                 if map[i][j].search() == 'Success':
                     print('Success')
                     print(map[i][j].terrain)
-                    return searches + distance_traveled
+                    return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
                     update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
@@ -303,13 +305,20 @@ def agent3(map):
                 if map[i][j].search() == 'Success':
                     print('Success')
                     print(map[i][j].terrain)
-                    return searches + distance_traveled
+                    return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
                     update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
 
+        searches += 1
+
+        if map[i][j].search() == 'Success':
+            print('Success')
+            print(map[i][j].terrain)
+            return (searches + distance_traveled, map[i][j].terrain)
+
         # failed to find target
-        update_ratio_matrix(found_matrix, map, i, j)
+        ratio_matrix = update_ratio_matrix(found_matrix, map, i, j)
         
         i, j, distance = find_next_move(ratio_matrix, i, j)
         distance_traveled += distance
@@ -390,15 +399,42 @@ def improved_next_move(map, belief_matrix, found_matrix, i, j):
     return x, y, manhattan_distance
 ''' 
 
-
-def main():
+def agent1_trial():
     map = generate_map(50)
     place_target(map)
-    #score = agent1(map)
-    #score = agent2(map)
-    score = agent3(map)
-    print(score)
+    return agent1(map)
+
+def agent2_trial():
+    map = generate_map(50)
+    place_target(map)
+    return agent2(map)
+
+def agent3_trial():
+    map = generate_map(50)
+    place_target(map)
+    return agent3(map)
+
+def main():
+    exec = concurrent.futures.ProcessPoolExecutor(max_workers=50)
+
+    futures, results = {}, []
+
+    for i in range(50):
+        futures[exec.submit(agent1_trial)] = 0
+    
+    for future in concurrent.futures.as_completed(futures):
+        results.append(future.result())
+    
+    total = 0
+
+    for item in results:
+        total += item[0]
+    
+    print(total / 50)
     
 
 if __name__ == '__main__':
     main()
+    # 8498.80 (improved agent)
+    # 25949.24 (agent 2)
+    # 46553.76 (agent 1)
