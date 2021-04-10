@@ -171,7 +171,8 @@ def agent2(map):
         return (searches + distance_traveled, map[i][j].terrain)
 
     update_belief_matrix(belief_matrix, map, i, j)
-    
+    update_found_matrix(found_matrix, belief_matrix, map)
+
     i, j, distance = find_next_move(found_matrix, i, j)
     distance_traveled += distance
 
@@ -183,8 +184,10 @@ def agent2(map):
             return (searches + distance_traveled, map[i][j].terrain)
         
         # failed to find target
-        update_found_matrix(found_matrix, belief_matrix, map)
+
         update_belief_matrix(belief_matrix, map, i, j)
+        update_found_matrix(found_matrix, belief_matrix, map)
+        
         
         i, j, distance = find_next_move(found_matrix, i, j)
         distance_traveled += distance
@@ -192,52 +195,6 @@ def agent2(map):
         #print(np.sum(found_matrix))
 
 def agent3(map):
-    '''
-    belief_matrix = np.zeros((len(map), len(map)))
-    init_belief(belief_matrix)
-    print(belief_matrix)
-
-    found_matrix = np.zeros((len(map), len(map)))
-    update_found_matrix(found_matrix, belief_matrix, map)
-    print(found_matrix)
-
-    searches = 0 
-    distance_traveled = 0
-
-    found = False
-    # randomly pick first cell to search
-    i = random.randint(0, len(map) - 1)
-    j = random.randint(0, len(map) - 1)
-
-    searches += 1
-    
-    if (map[i][j].search() == 'Success'):
-        print('Success!')
-        return searches + distance_traveled
-
-    update_belief_matrix(belief_matrix, map, i, j)
-    
-    i, j, distance = improved_next_move(map, belief_matrix, found_matrix, i, j)
-    #i, j, distance = find_next_move(found_matrix, i, j)
-    distance_traveled += distance
-
-    while not(found):
-        searches += 1
-        if map[i][j].search() == 'Success':
-            print('Success')
-            print(map[i][j].terrain)
-            return searches + distance_traveled
-        
-        # failed to find target
-        update_found_matrix(found_matrix, belief_matrix, map)
-        update_belief_matrix(belief_matrix, map, i, j)
-        
-        i, j, distance = improved_next_move(map, belief_matrix, found_matrix, i, j)
-        #i, j, distance = find_next_move(found_matrix, i, j)
-        distance_traveled += distance
-        print(np.sum(belief_matrix))
-        print(np.sum(found_matrix))
-    '''
     belief_matrix = np.zeros((len(map), len(map)))
     init_belief(belief_matrix)
     #print(belief_matrix)
@@ -262,6 +219,7 @@ def agent3(map):
         return (searches + distance_traveled, map[i][j].terrain)
 
     update_belief_matrix(belief_matrix, map, i, j)
+    update_found_matrix(found_matrix, belief_matrix, map)
     ratio_matrix = update_ratio_matrix(found_matrix, map, i, j)
     
     i, j, distance = find_next_move(ratio_matrix, i, j)
@@ -277,8 +235,8 @@ def agent3(map):
                 print(map[i][j].terrain)
                 return (searches + distance_traveled, map[i][j].terrain)
             else:
-                update_found_matrix(found_matrix, belief_matrix, map)
                 update_belief_matrix(belief_matrix, map, i, j)
+                update_found_matrix(found_matrix, belief_matrix, map)
         elif (map[i][j].terrain == 'hilly'):
             for iter in range(2):
                 searches += 1
@@ -287,28 +245,28 @@ def agent3(map):
                     print(map[i][j].terrain)
                     return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
-                    update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
+                    update_found_matrix(found_matrix, belief_matrix, map)
         elif (map[i][j].terrain == 'forested'):
-            for iter in range(3):
+            for iter in range(4):
                 searches += 1
                 if map[i][j].search() == 'Success':
                     print('Success')
                     print(map[i][j].terrain)
                     return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
-                    update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
+                    update_found_matrix(found_matrix, belief_matrix, map)
         elif (map[i][j].terrain == 'cave'):
-            for iter in range(9):
+            for iter in range(10):
                 searches += 1
                 if map[i][j].search() == 'Success':
                     print('Success')
                     print(map[i][j].terrain)
                     return (searches + distance_traveled, map[i][j].terrain)
                 else: # failed search so update relevant probability matrices
-                    update_found_matrix(found_matrix, belief_matrix, map)
                     update_belief_matrix(belief_matrix, map, i, j)
+                    update_found_matrix(found_matrix, belief_matrix, map)
 
         searches += 1
 
@@ -338,66 +296,6 @@ def update_ratio_matrix(found_matrix, map, i , j):
             ratio = found_matrix[x][y] / distance # want to maximize probability and minimize ratio
             ratio_matrix[x][y] = ratio
     return ratio_matrix
-'''
-def find_next_moves_improved(prob_matrix, i, j, avoid):
-    best_prob = 0
-    best_distance = 60
-    best_i = -1
-    best_j = -1
-
-    for x in range(prob_matrix.shape[0]):
-        for y in range(prob_matrix.shape[1]):
-            if (x, y) in avoid:
-                continue
-            if prob_matrix[x][y] > best_prob:
-                best_i = x
-                best_j = y
-                best_prob = prob_matrix[x][y]
-                best_distance = abs(i - x) + abs(j - y)
-            elif prob_matrix[x][y] == best_prob:
-                distance = abs(i - x) + abs(j - y)
-                if distance < best_distance:
-                    best_i = x
-                    best_j = y
-                    best_distance = distance
-                elif distance == best_distance:
-                    rand = random.randint(1, 2)
-                    if rand == 2:
-                        best_i = x
-                        best_j = y
-                        best_distance = distance
-    
-    return best_i, best_j, best_distance, prob_matrix[best_i][best_j]
-
-
-def improved_next_move(map, belief_matrix, found_matrix, i, j):
-   
-    potential_moves = [] # list of 5 highest probability cells to consider utilities for
-    avoid = []
-    utilities = []
-    for i in range(5):
-        best_i, best_j, best_distance, prob = find_next_moves_improved(found_matrix, i, j, avoid)
-        avoid.append((best_i, best_j))
-        potential_moves.append(((best_i, best_j), best_distance))
-
-    for move in potential_moves:
-        x, y = move[0] # next cell being considered to move to
-        found_copy = np.copy(found_matrix)
-        update_found_matrix(found_copy, belief_matrix, map)
-        x1, y1, utilDistance = find_next_move(found_copy, x, y)
-        utility = move[1] + ((1 - found_copy[x][y]) * (utilDistance + 1)) + (found_copy[x][y] * (1))
-        utilities.append((utility, (x,y)))
-    
-    minUtil = utilities[0]
-    for item in utilities:
-        if item[0] < minUtil[0]:
-            minUtil = item
-
-    x, y = minUtil[1]
-    manhattan_distance = abs(i - x) + abs(j - y)
-
-    return x, y, manhattan_distance
-''' 
 
 def agent1_trial():
     map = generate_map(50)
