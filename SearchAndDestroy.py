@@ -425,30 +425,19 @@ def agent3_trial():
 This is the main function for the program
 '''
 def main():
+    score1 = agent1_trial()
+    print(score1)
 
+    score2 = agent2_trial()
+    print(score2)
 
-    exec = concurrent.futures.ProcessPoolExecutor(max_workers=50)
-
-    futures, results = {}, []
-
-    # run 50 trials for the agent type
-    for i in range(50):
-        futures[exec.submit(agent1_trial)] = 0
-    
-    for future in concurrent.futures.as_completed(futures):
-        results.append(future.result())
-    
-    total = 0
-
-    for item in results:
-        total += item[0]
-    
-    # average the sum of the scores to get the average score for the agent type over 50 trials
-    print(total / 50)
+    score3 = agent3_trial()
+    print(score3)
     
 
 if __name__ == '__main__':
     main()
-    # 8498.80 (improved agent)
-    # 25949.24 (agent 2)
-    # 46553.76 (agent 1)
+    # averages:
+    # (improved agent) 9724.07
+    # (agent 2) 30334.27
+    # (agent 1) 35077.1
