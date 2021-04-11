@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import heapq
-import concurrent.futures
+
 '''
 This python file is used to play a game of search and destroy on a randomly generated 50 x 50 board with either one of two basic agents 
 or an improved agent. The cells of the board are randomly given terrain types with an equal probability. Then, a target is randomly
